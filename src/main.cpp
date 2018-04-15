@@ -1,48 +1,28 @@
 #include <Arduino.h>
-/*#include <bitswap.h>
-#include <chipsets.h>
-#include <color.h>
-#include <colorpalettes.h>
-#include <colorutils.h>
-#include <controller.h>
-#include <cpp_compat.h>
-#include <dmx.h>
-#include <FastLED.h>
-#include <fastled_config.h>
-#include <fastled_delay.h>
-#include <fastled_progmem.h>
-#include <fastpin.h>
-#include <fastspi.h>
-#include <fastspi_bitbang.h>
-#include <fastspi_dma.h>
-#include <fastspi_nop.h>
-#include <fastspi_ref.h>
-#include <fastspi_types.h>
-#include <hsv2rgb.h>
-#include <led_sysdefs.h>
-#include <lib8tion.h>
-#include <noise.h>
-#include <pixelset.h>
-#include <pixeltypes.h>
-#include <platforms.h>
-#include <power_mgt.h>
-*/
-
 #include <FastLED.h>
 
+#define STRIPTYPE NEOPIXEL
+
+constexpr bool backwards = false; // change to true if the leds are connected from the top
 constexpr size_t blanks = 5;
+constexpr uint8_t stripPin = 2;
+constexpr byte intesity = 255;
+
+
 constexpr size_t patternSize = 8*(6+blanks);
 constexpr size_t stripSize = 35;
 
 constexpr size_t ledArraySize = patternSize + stripSize - 1;
-constexpr uint8_t stripPin = 2;
+
 
 CRGB colors[ledArraySize];
 
 void createColorGradiante(CRGB *&pPixel, byte hue)
 {
-    for (int i=255; i>=0; i-=51, pPixel++) {
-        *pPixel = CHSV(hue, 255, byte(i));
+    constexpr byte step = backwards ? 51 : -51;
+    byte val = backwards ? 0 : 255; 
+    for (size_t i=0; i < 6; i++, val+=step, pPixel++) {
+        *pPixel = CHSV(hue, 255, val);
     }
     for (size_t i=0; i<blanks; i++, pPixel++) {
         *pPixel = CRGB(0,0,0);
@@ -57,8 +37,6 @@ void createRainbow(CRGB *pPixel)
     }
 }
 
-#define COLOR_ORDER RGB
-#define LED_TYPE WS2811        // i'm using WS2811s, FastLED supports lots of different types.
 
 void setup()
 {
@@ -70,16 +48,21 @@ void setup()
         ledsLeft -= patternSize;
         currentLed += patternSize;
     } while (ledsLeft > 0);
-    FastLED.addLeds<NEOPIXEL, stripPin>(colors, int(stripSize));
+    FastLED.addLeds<STRIPTYPE, stripPin>(colors, int(stripSize));
 }
 
-size_t currentStartPoint = 0;
+size_t currentStep = 0;
+
+inline size_t startingPoint(size_t step)
+{
+    return backwards ? patternSize - 1 - step : step;
+}
 
 void loop() {
-    FastLED[0].show(colors + currentStartPoint, stripSize, 255);
-    currentStartPoint++;
-    if (currentStartPoint >= patternSize) {
-        currentStartPoint = 0;
+    FastLED[0].show(colors + startingPoint(currentStep), stripSize, intesity);
+    currentStep++;
+    if (currentStep >= patternSize) {
+        currentStep = 0;
     }
     delay(150);
 }
