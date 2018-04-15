@@ -51,9 +51,9 @@ void createColorGradiante(CRGB *&pPixel, byte hue)
 
 void createRainbow(CRGB *pPixel)
 {
-    for (byte hue = 0 ; hue < 128 ; hue += 32) {
+    for (byte hue = 0, i=0 ; i<8 ; i++, hue += (32*5)) {
         createColorGradiante(pPixel, hue);
-        createColorGradiante(pPixel, hue + 128);
+        //createColorGradiante(pPixel, hue + 128);
     }
 }
 
